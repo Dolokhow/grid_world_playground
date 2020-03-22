@@ -127,6 +127,35 @@ Each specific algorithm will have three visualizations associated, obtained solv
 #### Planning algorithms
 #### Learning algorithms
 ### Code
+
+#### Dependencies
+
+* **Python 3.6**
+* **Numpy**: for number crunching
+* **OpenCV**: for visualizations, not mandatory but **highly recommended**
+
+Both numpy and opencv can be installed via the pip3 command:
+`pip3 install numpy, opencv-python`
+
+#### Core Logic
+
+All logic is implemented within:
+
+* **[ai_agents.py](../ai_agents.py)**: Implements various agents through subclassing abstract AI class. Abstract AI class has just one field, self._world, which holds the World agent lives in.
+* **[world.py](../ai_agents.py)**: Implements GridWorld through subclassing of the abstract World class.
+* **[visualizations.py](../ai_agents.py)**: Contains abstract WorldVisualizer and subclasses GridVisualizer which is responsible for opencv visualizations depicted in section [Theory](#theory).
+
+Key code features are:
+
+* Code enforces strictly object oriented approach, code replication is non existent.
+* Agents are decoupled from the worlds they live in. This means that any implemented agent can work with any world, as long as this new world is derived from the World class.
+* Agents are implemented as closely to the pseudo code found in [literature](#literature). Agents can be easily subclassed for more specific behavior.
+* Worlds and agents are decoupled from their visualization. If one does not want to use opencv, or wants to implement their own visualization, one needs to change the WorldVisualizer class and not the World itself.
+
+Even though they are decoupled, agents and worlds must communicate in some way. Agents enact actions in the World, and World is responsible for keeping itself in a consistent state. Furthermore, in order to debug agents and create detailed visualizations of their underlying logic, agents must cooperate with Worlds so that those visualizations can be created. **I list below several important constraints which must be respected**:
+
+* 
+
 ### Literature
 
 #### Basics (Searching, Planning, Learning)

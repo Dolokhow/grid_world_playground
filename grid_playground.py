@@ -4,7 +4,7 @@ import numpy as np
 import logging
 
 # configure universal params
-STORE_PATH = '/Users/djordje/ML/personal/RL/rl_projects/block_world_q_learning_scratch/' \
+STORE_PATH = '/Users/djordje/ML/personal/RL/rl_projects/grid_world_playground/' \
                  'experimentation/search_algorithms/1_SIMPLE'
 MAX_REWARD = 1
 MIN_REWARD = -10

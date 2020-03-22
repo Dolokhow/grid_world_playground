@@ -3,9 +3,26 @@ from abc import abstractmethod, ABC
 import numpy as np
 from utils import PerceptViz
 import os
+import logging
 
 
 class WorldVisualizer(ABC):
+    def __init__(self, img_width, img_height, enforce_img_dims):
+        """
+
+        :param img_width: Image width in pixels to be stored as visualization.
+        :param img_height: Image height in pixels to be stored as visualization.
+        :param enforce_img_dims: Whether to enforce image dims or not. If image dims are enforced, image dimension
+        will never exceed limits, but visualization may not be crisp. If they are not enforced, image will be sharp
+        and readable, but may be too large. If one is creating a large world, it is recommended to opt for enforcing
+        dims.
+        """
+
+        self._img_width = img_width
+        self._img_height = img_height
+        self._enforce_dims = enforce_img_dims
+        self._tag = 'WorldVisualizer'
+        self._logger = logging.getLogger(os.path.join(__name__, self._tag))
 
     @abstractmethod
     def visualize_solution(self, world_info, percept_viz, store_path, tag):
@@ -17,8 +34,13 @@ class WorldVisualizer(ABC):
 
 
 class GridVisualizer(WorldVisualizer):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, img_width=1800, img_height=1800, enforce_img_dims=False):
+        super().__init__(
+            img_width=img_width,
+            img_height=img_height,
+            enforce_img_dims=enforce_img_dims
+        )
+        self._tag = 'GridVisualizer'
 
     def visualize_heuristic(self, world_info, percept_viz, store_path, tag):
         self.visualize_solution(
@@ -39,8 +61,19 @@ class GridVisualizer(WorldVisualizer):
         terminal_states = world_info['terminal_states']
         start_percept = world_info['start_percept']
 
-        cell_width = 300
-        cell_height = 300
+        if self._enforce_dims is False and grid_rows > 15 and grid_cols > 15:
+            self._logger.warning('Grid World dims exceed maximal limit for '
+                                 'reasonable visualization without constraining dimensions. Will constrain dimensions.')
+            constrain_dims = True
+        else:
+            constrain_dims = self._enforce_dims
+
+        if constrain_dims is False:
+            cell_width = 300
+            cell_height = 300
+        else:
+            cell_width = int(self._img_width / grid_rows)
+            cell_height = int(self._img_height / grid_cols)
 
         if tag is None:
             tag = 'unknown_model'
