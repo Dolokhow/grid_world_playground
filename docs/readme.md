@@ -86,7 +86,7 @@ The first two images come from the second eddition of Russel & Norvig: Artificia
 
 You will notice that the only difference between a Graph Search and a Tree Search is that Graph Search includes a data structure **closed** which tkat keeps track of the nodes (states, percepts) already visited during the search.
 
-<a href="url"><img src="./images/Tree-Search.png" alt="Tree Search Algorithm" width="500" align="left"/></a>
+<a href="url"><img src="./images/Tree-Search.png" alt="Tree Search Algorithm" width="500" align="left"/></a> 
 <a href="url"><img src="./images/Graph-Search.png" alt="Graph Search Algorithm" width="500" align="Right"/></a>
 <a href="url"><img src="./images/Tree-Graph-Search.png" alt="Graph or Tree Search" width="500" align="center"/></a>
 
@@ -115,7 +115,17 @@ Each specific algorithm will have three visualizations associated, obtained solv
 
 #### Uninformed algorithms
 
+Uninformed algorithms do not have a heuristic to consult, hence their name. A heuristic is nothing more providing the algorithm with the specific knowledge about the problem, which aims to keep it on the right track. If our agents were tasked to go from some origin city to some some destination city, with path potentially branching and passing through nearby towns and cities, a reasonable heuristic for each city would be its air distance to the destination.
+
+Technically, a heuristic has couple of characteristics that are really important, and not everything can be a heuristic. More on heuristics will be explained later, when I talk informed search algorithms. For now, think of a heuristic as a mean of helping our agent by inputting human intuition, which uninformed algorithms do not have access to.
+
+As I have previously stated, the entire diferrence between all of the searching algorithms is handled within the implementation of **REMOVE-FIRST** and **INSERT-ALL** functions. I list below what these functions are doing for each of the mentioned algorithms.
+
 ##### Breadth-First Search
+
+<a href="../experimentation/search_algorithms/1_SIMPLE/Breadth-First.png"><img src="experimentation/search_algorithms/1_SIMPLE/Breadth-First.png" alt="Graph Search Algorithm" width="500" align="left"/></a>
+
+<a href="../experimentation/search_algorithms/2_DESTINY/Breadth-First.png"><img src="experimentation/search_algorithms/2_DESTINY/Breadth-First.png" alt="Graph or Tree Search" width="500" align="center"/></a>
 ##### Depth-First Search
 ##### Branch-and-Bound Search
 #### Informed algorithms
