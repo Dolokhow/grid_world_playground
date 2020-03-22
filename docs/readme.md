@@ -42,9 +42,9 @@ The rest of this page is divided as follows:
 
 The Grid World setup we will use throughout the explanatiotns is given below. Yellow-Bounded state represents agent's starting position, while Green-Bounded state represents agent's goal, depicting the reward awaiting agent when it reaches it. Gray blocks represent walls which agents cannot pass through.
 
-![Grid World](./images/Grid-World.png "Grid World Experimental Setup")
+<a href="url"><img src="./images/Grid-World.png" alt="Grid World Experimental Setup" width="500" align="center"/></a>
 
-Agents have 4 actions available, UP, DOWN, LEFT, and RIGHT. The trick is, these actions are stochastic. That is, if the agent chooses to go in any direction, there is an assigned probability probability of agent taking the intended action, and probabilities of agent taking random action orthogonal to the intended action. For example, if agent chooses to go UP, we can configure the **transition model** so that agent will actually go up in 80% of the cases, but in 10% of the cases it will go LEFT, and in 10% of the cases it will go RIGHT. Same goes for the rest of the three available actions.
+Agents have 4 actions available, UP, DOWN, LEFT, and RIGHT. The trick is, these actions are stochastic. If the agent chooses to go in any direction, there is an assigned probability of agent taking the intended action, and probabilities of agent taking random action orthogonal to the intended action. For example, if agent chooses to go UP, we can configure the **transition model** so that agent will actually go up in 80% of the cases, but in 10% of the cases it will go LEFT, and in 10% of the cases it will go RIGHT. Same goes for the rest of the three available actions.
 
 **NOTE**: Through code, one could configure arbitrary Grid World dimensions, walls, start and terminal states. There could be multiple terminal states, with different both positive and negative rewards associated. Furthermore, transition model probabilities are also configurable, including making Grid World deterministic.
 
@@ -86,9 +86,9 @@ The first two images come from the second eddition of Russel & Norvig: Artificia
 
 You will notice that the only difference between a Graph Search and a Tree Search is that Graph Search includes a data structure **closed** which tkat keeps track of the nodes (states, percepts) already visited during the search.
 
-![Tree Search](./images/Tree-Search.png)
-![Graph Search](./images/Graph-Search.png)
-![Tree-Graph Search](./images/Tree-Graph-Search.png)
+<a href="url"><img src="./images/Tree-Search.png" alt="Tree Search Algorithm" width="500" align="left"/></a>
+<a href="url"><img src="./images/Graph-Search.png" alt="Graph Search Algorithm" width="500" align="Right"/></a>
+<a href="url"><img src="./images/Tree-Graph-Search.png" alt="Graph or Tree Search" width="500" align="center"/></a>
 
 For a good understanding of the algorithm depicted above, one needs to know all of the referenced data structures and functions. I recommend reading the appropriate section of the book, given in [Literature](#literature), as I am only briefly covering these concepts:
 
@@ -154,7 +154,10 @@ Key code features are:
 
 Even though they are decoupled, agents and worlds must communicate in some way. Agents enact actions in the World, and World is responsible for keeping itself in a consistent state. Furthermore, in order to debug agents and create detailed visualizations of their underlying logic, agents must cooperate with Worlds so that those visualizations can be created. **I list below several important constraints which must be respected**:
 
-* 
+* **enacting action - information passing**: When asking for a reward, or trying to enact the action, agent must communicate to the World what it wants to do. It passes a **percept** argument and, when required, **action_id** argument. **percept** argument is always a Python tuple containing percepts available at current agent state. **action_id** depends on which actions are available to the agent, based on the world it lives in.
+* **visualizing internal states - information passing**: In order to visualize agent's internal states, agents and worlds must act together. Agent holds relevant info about self, which world has nothing about. Similarly, World hodls information about self, which should never be available to the agent. This information passing is via **percept_viz** argument which must be a Python dictionary, containing percepts mapped to PerceptViz objects containing necessary info for visualization. PerceptViz objects are merely containers for necessary data, with all variables public. When creating a new world one can either just add new arguments to PerceptViz class, or just subclass it.
+
+**Finally, code is thoroughly commented and I recommend going streight to code from here.**
 
 ### Literature
 
