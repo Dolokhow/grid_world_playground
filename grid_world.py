@@ -1,39 +1,11 @@
-from abc import ABC, abstractmethod
 import numpy as np
-from utils import PerceptViz
-import os
-import logging
-
-# COMMENT THIS LINE IF YOU DO NOT HAVE OPENCV INSTALLED
-from visualization import GridVisualizer, WorldVisualizer
-from utils import GridActions
+from core import PerceptViz, TransitionModel, Action, World
+from visualization import GridVisualizer
 
 
-class TransitionModel(ABC):
-    def __init__(self, actions):
-        self._actions = actions
-        self._actions_len = actions.get_actions_len()
-        np.random.seed(123)
-
-    def take_action(self, action_id):
-        """
-        Returns  stochastic action taken.
-        :param action_id: Action intended to be taken.
-        :return: Taken action_id.
-        """
-        action_id = self._stochastic_action(action_id=action_id)
-        return action_id
-
-    @abstractmethod
-    def _stochastic_action(self, action_id):
-        """
-        Used when transition model is stochastic as in GridWorld problem. Based on some probability desired
-        action is selected. In other cases some other action is selected based on some logic which this function
-        implements.
-        :param action_id: Desired action id.
-        :return: Action id corresponding to the action to be taken.
-        """
-        pass
+class GridActions(Action):
+    def __init__(self):
+        super().__init__(action_ids=['UP', 'DOWN', 'LEFT', 'RIGHT'])
 
 
 class GridTransitions(TransitionModel):
@@ -48,7 +20,34 @@ class GridTransitions(TransitionModel):
         for index in range(1, len(action_probs)):
             self._action_cutoffs.append(self._action_cutoffs[index-1]+action_probs[index])
 
-    # TODO: Fix this!
+    @staticmethod
+    def _orth_1(action_ind):
+
+        if action_ind == 0:
+            action_ind += 2
+        elif action_ind == 1:
+            action_ind += 2
+        elif action_ind == 2:
+            action_ind -= 1
+        else:
+            action_ind -= 3
+
+        return action_ind
+
+    @staticmethod
+    def _orth_2(action_ind):
+
+        if action_ind == 0:
+            action_ind += 3
+        elif action_ind == 1:
+            action_ind += 1
+        elif action_ind == 2:
+            action_ind -= 2
+        else:
+            action_ind -= 2
+
+        return action_ind
+
     def _stochastic_action(self, action_id):
         """
         See abstract method.
@@ -65,204 +64,28 @@ class GridTransitions(TransitionModel):
             # relies on the fact that there are 4 actions
             action_ind = self._actions.get_action_by_id(action_id=action_id)
             if rand < self._action_cutoffs[1]:
-
-                if action_ind == 0:
-                    action_ind += 2
-                elif action_ind == 1:
-                    action_ind += 2
-                elif action_ind == 2:
-                    action_ind -= 1
-                else:
-                    action_ind -= 3
+                action_ind = self._orth_1(action_ind=action_ind)
             else:
-
-                if action_ind == 0:
-                    action_ind += 3
-                elif action_ind == 1:
-                    action_ind += 1
-                elif action_ind == 2:
-                    action_ind -= 2
-                else:
-                    action_ind -= 2
+                action_ind = self._orth_2(action_ind=action_ind)
             return self._actions.get_action_by_ind(action_ind=action_ind)
 
+    def get_alt_outcomes(self, action_id):
+        possible_actions = []
 
-class World(ABC):
-    def __init__(self, start_pos=None, heuristic=False, tag='Undefined-World', visualization=True):
-        """
-        :param heuristic: Boolean, whether heuristic should be generated. Heuristics are necessary for some informed
-        search algorithms such as A* search. They are not useful to basic search algorithms or advanced learning
-        algorithms like q learning.
-        :param start_pos: Starting percept/state of the agent in the world.
-        :param visualization: boolean value, whether complex visualization should be used. Complex visualization
-        uses WorldVisualizer object defined in visualization.py. Implemented via command design pattern.
-        :var self._world: Contains internal representation of the world, containing rewards.
-        :var self._actions: Action object describing available actions. Agent will request actions from World.
-        :var self._transition_model: Is of type TransitionModel, contains logic that maps actions into future states.
-        :var self._start_percept: Starting percept,a python tuple,
-        of agent in world, if left None then position is picked at random.
-        :var self._heuristic: Maps each (state/percept, action) pair into a single value representing heuristic
-        h(n=(a,s)).
-        """
-        self._tag = tag
-        self._world = self._initialize_world()
-        self._actions = self._initialize_actions()
-        self._transition_model = self._initialize_transition_model()
-        self._logger = logging.getLogger(os.path.join(__name__, self._tag))
-        # Necessary for informed search algorithms
-        if heuristic:
-            self._heuristic = self._initialize_heuristic()
-        else:
-            self._heuristic = None
+        action_ind = self._actions.get_action_by_id(action_id=action_id)
+        possible_actions.append([action_id, self._action_cutoffs[0]])
 
-        self._start_percept = start_pos
-        self._complex_vis = visualization
-        # To be set by subclass
-        self._visualizer: WorldVisualizer = None
+        alt_1_prob = self._action_cutoffs[1] - self._action_cutoffs[0]
+        if alt_1_prob > 0:
+            alt_1 = self._actions.get_action_by_ind(action_ind=self._orth_1(action_ind=action_ind))
+            possible_actions.append([alt_1, alt_1_prob])
 
-    @abstractmethod
-    def _initialize_actions(self):
-        pass
+        alt_2_prob = self._action_cutoffs[2] - self._action_cutoffs[1]
+        if alt_2_prob > 0:
+            alt_2 = self._actions.get_action_by_ind(action_ind=self._orth_2(action_ind=action_ind))
+            possible_actions.append([alt_2, alt_2_prob])
 
-    @abstractmethod
-    def _initialize_transition_model(self):
-        pass
-
-    @abstractmethod
-    def _initialize_world(self):
-        pass
-
-    @abstractmethod
-    def _initialize_heuristic(self):
-        pass
-
-    @abstractmethod
-    def _map_percepts_to_state(self, percept):
-        """
-        Maps current agent's perception, represented as percept, to a specific valid world (agent) state.
-        This abstraction gives worlds ability to arbitrarily implement internal world.
-        :param percept: Python tuple representing current agent's perception.
-        :return: state from the world.
-        """
-        pass
-
-    @abstractmethod
-    def next_position(self, percept, action_id):
-        """
-        Calculates agent's next position in the world. Depends on the worlds transition model and
-        the world's internal logic. Maps action to next percept. Is called either directly by agent or self.take_action.
-        :param action_id: Action intelligent agent or algorithm has decided to take.
-        :param percept: Current percept, a python tuple of values.
-        :return: Next percept, a python tuple of values, obtained by enacting action in the world.
-        """
-        pass
-
-    @abstractmethod
-    def get_reward(self, percept):
-        """
-        Returns reward based on current percept. Depends on internal world implementation and
-        self._map_percepts_to_state implementation.
-        :param percept: Python tuple corresponding to values of current percept.
-        :return: (is_terminal, reward_signal) tuple corresponding to state_id.
-        """
-        pass
-
-    @abstractmethod
-    def get_cost(self, percept):
-        """
-        Returns cost based associated with current percept. Depends on internal world implementation and
-        self._map_percepts_to_state implementation. Similar to reward, but opposite. Agents usually either maximize
-        reword or reduce cost. In some worlds these two values may be direct opposites.
-        :param percept: Python tuple corresponding to values of current percept.
-        :return: (is_terminal, cost_signal) tuple corresponding to state_id.
-        """
-
-    @abstractmethod
-    def get_heuristic(self, percept, action_id):
-        """
-        Method to be used by informed search algorithms
-        :param percept: Python tuple corresponding to values of current percept.
-        :param action_id:  Action intelligent agent or algorithm considers to take.
-        :return: Returns heuristic value h(percept, action_id) if heuristic exists, or None if it doesn't.
-        """
-        pass
-
-    @abstractmethod
-    def get_available_percepts(self):
-        """
-        Returns all available percepts in the world.
-        Should be used by agents whose implementation would greatly benefit knowing beforehand all available percepts.
-        Do not confuse with rewards, the agents should not know all available rewards beforehand.
-        :return: Python list of tuples, each tuple indicates percepts belonging to one internal state.
-        List of tuples as a structure is mandatory so agents can be decoupled from any particular world.
-        """
-        pass
-
-    @abstractmethod
-    def get_default_start(self):
-        """
-        Utility method. Returns default starting position in the world.
-        :return: Python tuple.
-        """
-        pass
-
-    @abstractmethod
-    def print_info(self):
-        """
-        Prints to console useful info about self in standardized form.
-        :return: None
-        """
-        pass
-
-    def take_action(self, percept, action_id):
-        """
-        See self.next_position. This method calculates next position and reaps reward for the agent.
-        :param action_id: Action intelligent agent or algorithm has decided to take.
-        :param percept: Current percept, a python tuple of values.
-        :return: Reword in the state reached after enacting action_id in the world.
-        """
-        next_percept = self.next_position(percept=percept, action_id=action_id)
-        is_terminal, reward = self.get_reward(percept=next_percept)
-        return is_terminal, reward
-
-    def get_available_actions(self):
-        """
-        To be called by agents, returns available actions in the world.
-        :return: Python list of action_ids.
-        """
-        return self._actions.get_action_ids()
-
-    def heuristic_available(self):
-        return self._heuristic
-
-    def visualize_heuristic(self, store_path):
-        """
-        Visualizes heuristic if there is some.
-        :return: By default just prints info about the world which includes heuristic.
-        If complex visualizations are requested, WorldVisualized object visualizes the heuristic.
-        Left for subclasses set appropriate visualizer object and redefine this method.
-        """
-        if self._heuristic is True:
-            self.print_info()
-        else:
-            self._logger.warning('Visualization of heuristic requested, but found none.')
-
-    def visualize_solution(self, percept_viz, store_path, tag=None):
-        """
-        Visualizes the solution.
-        :param percept_viz: Python mapping tuple percept to PerceptViz object giving information about an agent solution.
-        Can contain either all available percepts or just some subset.
-        :param tag Agent's tag. String.
-        :param store_path: Path where to store the visualization.
-        :return: By default just prints info about the world and percept values.
-        If complex visualizations are requested, WorldVisualized object visualizes solution.
-        Left for subclasses set appropriate visualizer object and redefine this method.
-        """
-
-        for elem in percept_viz:
-            print(elem.percept)
-            print(elem.action_values)
-        self.print_info()
+        return possible_actions
 
 
 class GridWorld(World):
@@ -445,9 +268,8 @@ class GridWorld(World):
         else:
             return None
 
-    def next_position(self, percept, action_id):
+    def _next_position(self, percept, action_id):
         key = self._map_percepts_to_state(percept=percept)
-        action_id = self._transition_model.take_action(action_id=action_id)
 
         row = key[0]
         col = key[1]
@@ -473,7 +295,7 @@ class GridWorld(World):
         for row in range(self.__grid_dims[0]):
             for col in range(self.__grid_dims[1]):
                 key = (row, col)
-                if key not in self.__walls:
+                if key not in self.__walls and key not in self.__terminal_states:
                     percepts.append(key)
         return percepts
 

@@ -1,10 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import deque
-from world import World, GridWorld
-from utils import PerceptViz
-import logging
-import os
-import numpy as np
+from core import AI, PerceptViz
 
 
 class SearchTreeNode:
@@ -15,62 +11,6 @@ class SearchTreeNode:
         self.path_cost = path_cost
         self.depth = depth
         self.heuristic = heuristic
-
-
-class AI(ABC):
-    _world: World
-
-    def __init__(self, world, debug=False, tag='AI'):
-        """
-        Root class for all AI algorithms that are implemented.
-        :param world: World in which agent lives.
-        :param debug: Whether to store additional info useful for debugging.
-        All examples can handle any world as long as it subclasses abstract World.
-        Available actions are requested from the world.
-        """
-        self._world = world
-        self._actions = world.get_available_actions()
-        self._start_pos = world.get_default_start()
-        self._debug = debug
-
-        self._tag = tag
-        self._logger = logging.getLogger(os.path.join(__name__, self._tag))
-        # Delete line below, reminder for TD Agents!
-        # self._uniform_percepts = world.get_available_percepts()
-
-    def _take_action(self, percept, action_id):
-        """
-        Implements interaction with the world. Calls World.next_position().
-        :return: next state, next percept, a Python list of values
-        """
-        next_state = self._world.next_position(percept=percept, action_id=action_id)
-        return next_state
-
-    @abstractmethod
-    def _select_next_action(self):
-        """
-        Implements decision making logic of an AI agent.
-        For example, in case of searching algorithms it discerns breadth first from depth first by changing FIFO/LIFO
-        logic, or in case of Q learning it can implement a stochastic epsilon greedy policy.
-        :return: next action
-        """
-        pass
-
-    @abstractmethod
-    def get_debug_info(self):
-        """
-        Returns additional info useful for debugging.
-        :return: Depends on subclass.
-        """
-        pass
-
-    @abstractmethod
-    def visualize(self, store_path):
-        """
-        Passes relevant info to the world to visualize. May utilize self.get_debug_info. Passed value must be in
-        dictionary {(percept tuple): PerceptViz object}. Calls world.visualize_solution.
-        :return: None.
-        """
 
 
 class TreeSearch(AI, ABC):
@@ -210,14 +150,13 @@ class TreeSearch(AI, ABC):
     def visualize(self, store_path):
         percept_viz = {}
 
-        self._world.visualize_solution(
-            percept_viz=percept_viz,
-            store_path=store_path,
-            tag=self._tag
-        )
-
         if self._search_called is False:
             self._logger.warning('Nothing to visualize. Search method never called. Will visualize empty World.')
+            self._world.visualize_solution(
+                percept_viz=percept_viz,
+                store_path=store_path,
+                tag=self._tag
+            )
             return
 
         # if there is debug info available
@@ -409,134 +348,6 @@ class AStarIsClimbing(TreeSearch):
             else:
                 # Greedy-Best-First
                 self._fringe = deque(sorted(self._fringe, key=lambda node: node.heuristic, reverse=True))
-
-
-def test_ai():
-    store_path = '/Users/djordje/ML/personal/RL/rl_projects/block_world_q_learning_scratch/experimentation/search_algorithms'
-    max_reward = 1
-    # min_reward = -10
-    start_pos = (5, 0)
-    # Only deterministic environments should be considered by basic search algorithms
-    action_probs = [1, 0, 0]
-    default_reward = -1
-    # Only one state can be terminal with basic search based algorithms
-    special_nodes = [
-        {
-            'position': (2, 5),
-            'reward': max_reward,
-            'terminal': True
-        },
-        {
-            'position': (4, 1),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (3, 1),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (2, 1),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (4, 3),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (5, 3),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (0, 4),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (1, 4),
-            'reward': np.nan,
-            'terminal': False
-        },
-        {
-            'position': (2, 4),
-            'reward': np.nan,
-            'terminal': False
-        },
-    ]
-
-    logging.basicConfig(level=logging.INFO)
-
-    grid_world = GridWorld(
-        start_pos=start_pos,
-        action_probs=action_probs,
-        grid_dims=(6, 6),
-        default_reward=default_reward,
-        special_nodes=special_nodes,
-        heuristic=True
-    )
-    grid_world.print_info()
-    grid_world.visualize_heuristic(store_path=store_path)
-
-    # UNINFORMED SEARCH
-
-    # Breadth-First Search
-    breadth_first_agent = BreadthlyCooper(world=grid_world, debug=True)
-    breadth_first_agent.search()
-    breadth_first_agent.visualize(store_path=store_path)
-
-    # Branch-And-Bound Search
-    branch_and_bound_agent = BreadthlyCooper(world=grid_world, debug=True, b_bound=True)
-    branch_and_bound_agent.search()
-    branch_and_bound_agent.visualize(store_path=store_path)
-
-    # Depth-First Search
-    depth_first_agent = JohnnyDeppth(world=grid_world, debug=True)
-    depth_first_agent.search()
-    depth_first_agent.visualize(store_path=store_path)
-
-    # INFORMED SEARCH
-
-    # Greedy-Best-First Search
-    best_first_agent = AStarIsClimbing(world=grid_world, debug=True, alg=1)
-    best_first_agent.search()
-    best_first_agent.visualize(store_path=store_path)
-
-    # Hill-Climbing Search
-    hill_climbing_agent = AStarIsClimbing(world=grid_world, debug=True, alg=2)
-    hill_climbing_agent.search()
-    hill_climbing_agent.visualize(store_path=store_path)
-
-    # A* Search
-    a_star_agent = AStarIsClimbing(world=grid_world, debug=True)
-    a_star_agent.search()
-    a_star_agent.visualize(store_path=store_path)
-
-    agent = BreadthlyCooper(world=grid_world, debug=True)
-    agent.visualize(store_path=store_path)
-
-    special_nodes.append({
-            'position': (4, 4),
-            'reward': -1,
-            'terminal': True
-        })
-    multiple_terminal_grid = GridWorld(
-        start_pos=start_pos,
-        action_probs=action_probs,
-        grid_dims=(6, 6),
-        default_reward=default_reward,
-        special_nodes=special_nodes,
-        heuristic=True,
-        tag='Multiple-Grid-World'
-    )
-    multiple_terminal_grid.visualize_heuristic(store_path=store_path)
-
-
-if __name__ == '__main__':
-    test_ai()
 
 
 

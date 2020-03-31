@@ -1,36 +1,7 @@
 import cv2
-from abc import abstractmethod, ABC
 import numpy as np
-from utils import PerceptViz
 import os
-import logging
-
-
-class WorldVisualizer(ABC):
-    def __init__(self, img_width, img_height, enforce_img_dims):
-        """
-
-        :param img_width: Image width in pixels to be stored as visualization.
-        :param img_height: Image height in pixels to be stored as visualization.
-        :param enforce_img_dims: Whether to enforce image dims or not. If image dims are enforced, image dimension
-        will never exceed limits, but visualization may not be crisp. If they are not enforced, image will be sharp
-        and readable, but may be too large. If one is creating a large world, it is recommended to opt for enforcing
-        dims.
-        """
-
-        self._img_width = img_width
-        self._img_height = img_height
-        self._enforce_dims = enforce_img_dims
-        self._tag = 'WorldVisualizer'
-        self._logger = logging.getLogger(os.path.join(__name__, self._tag))
-
-    @abstractmethod
-    def visualize_solution(self, world_info, percept_viz, store_path, tag):
-        pass
-
-    @abstractmethod
-    def visualize_heuristic(self, world_info, percept_viz, store_path, tag):
-        pass
+from core import PerceptViz, WorldVisualizer
 
 
 class GridVisualizer(WorldVisualizer):
@@ -150,10 +121,14 @@ class GridVisualizer(WorldVisualizer):
                     # no action_values found
                     if color_range is None:
 
-                        if percept_obj.cv_color is not None:
+                        if percept_obj.cv_color is None:
+                            blank_image = blank_image * (255, 255, 255)
+                        else:
                             blank_image = blank_image * percept_obj.cv_color
-                            blank_image = blank_image.astype(np.uint8)
-                            colored_field = True
+                            if percept_obj.cv_color != (255, 255, 255):
+                                colored_field = True
+
+                        blank_image = blank_image.astype(np.uint8)
 
                         if percept_obj.single_value is not None:
 
