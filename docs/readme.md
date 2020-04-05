@@ -132,7 +132,7 @@ As you can see, in the SIMPLE_GRID_WORLD problem, Breadth-First does find an opt
 
 In case of MULTIPLE_DESTINY_WORLD problem, Breadth-First fails, reaching the bad outcome. This is because it does not keep track of the total path cost, and, in turn, does not prioritize opening nodes with lower cost.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Breadth-First.png"><img src="experimentation/search_algorithms/1_SIMPLE/Breadth-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Breadth-First.png"><img src="experimentation/search_algorithms/2_DESTINY/Breadth-First.png" alt="Graph or Tree Search" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Breadth-First.png"><img src="experimentation/search_algorithms/1_SIMPLE/Breadth-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Breadth-First.png"><img src="experimentation/search_algorithms/2_DESTINY/Breadth-First.png" alt="Graph or Tree Search" width="400" align="center"/></a>
 
  **SIMPLE_GRID_WORLD** problem visualization on the **left**, visualization of the **MULTIPLE_DESTINY_GRID_WORLD_PROBLEM** on the **right**.
  For visualizations of failed solutions to **CHAOTIC_GRID_WORLD_PROBLEM**, see [uploaded files](experimentation/search_algorithms/3_CHAOTIC).
@@ -144,7 +144,7 @@ In case of MULTIPLE_DESTINY_WORLD problem, Breadth-First fails, reaching the bad
 **Depth search is neither optimal nor complete**. As shown on the images below, depth first prioritizes one course of action until it either gets stuck, or finds a solution. In case of SIMPLE_GRID_WORLD it found a good solution, but its path was far from optimal. The fact that it is non-complete is more difficult to explain given GridWorld problem as it is complete when applied here. 
 
 **Non-completeness**: Imagine having a binary search tree. From root node to the right lies the solution, but on the left lies an infinitely branching sub-tree. If Depth-First choses to go right, it will instantly find the goal node, however, if it decides to go left it will get stuck in an infinte loop exploring the left sub-tree. This could not happen to Breadth-First Search as it would first explore all the previously expanded nodes before moving on to exploring new expansions.
-<a href="./experimentation/search_algorithms/1_SIMPLE/Depth-First.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Depth-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Depth-First.png"><img src="./experimentation/search_algorithms/2_DESTINY/Depth-First.png" alt="Graph or Tree Search" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Depth-First.png"><img src="./results/search_algorithms/1_SIMPLE/Depth-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Depth-First.png"><img src="./results/search_algorithms/2_DESTINY/Depth-First.png" alt="Graph or Tree Search" width="400" align="center"/></a>
 **SIMPLE_GRID_WORLD** problem visualization on the **left**, visualization of the **MULTIPLE_DESTINY_GRID_WORLD_PROBLEM** on the **right**.
  For visualizations of failed solutions to **CHAOTIC_GRID_WORLD_PROBLEM**, see [uploaded files](experimentation/search_algorithms/3_CHAOTIC).
 
@@ -170,7 +170,7 @@ In the code, I do not use **B** since I do not use heuristic function, and I use
 
 As you can see in the images below, Branch-And-Bound founds optimal solution in both cases, and was saved from making the wrong decision in MULTIPLE_DESTINY_GRID_WORLD by keeping track of path cost.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Branch-And-Bound.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Branch-And-Bound.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Branch-And-Bound.png"><img src="./experimentation/search_algorithms/2_DESTINY/Branch-And-Bound.png" alt="Graph or Tree Search" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Branch-And-Bound.png"><img src="./results/search_algorithms/1_SIMPLE/Branch-And-Bound.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Branch-And-Bound.png"><img src="./results/search_algorithms/2_DESTINY/Branch-And-Bound.png" alt="Graph or Tree Search" width="400" align="center"/></a>
 **SIMPLE_GRID_WORLD** problem visualization on the **left**, visualization of the **MULTIPLE_DESTINY_GRID_WORLD_PROBLEM** on the **right**.
  For visualizations of failed solutions to **CHAOTIC_GRID_WORLD_PROBLEM**, see [uploaded files](experimentation/search_algorithms/3_CHAOTIC).
 
@@ -208,7 +208,7 @@ What I did here was take a maximum optimistic path length estimation in this 6x6
 * Because I used min operator instead of average, this heuristic is **admissable** from the standpoint of a good terminal state. From the standpoint of a bad terminal state it absolutely is not, but that was the point anyway.
 * Its definitely **not consistent**.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Grid-World.png"><img src="./experimentation/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph or Tree Search" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./results/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Grid-World.png"><img src="./results/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph or Tree Search" width="400" align="center"/></a>
 SIMPLE_GRID_WORLD on the left, MULTIPLE_DESTINY_GRID_WORLD on the right. Arrows point in direction with the lowest value of heuristic function, indicating optimal direction for agent to move in. Position counting goes from top left corner, rows and columns indexing starts at 0.
 
 ##### Greedy-Best-First Search
@@ -217,10 +217,10 @@ SIMPLE_GRID_WORLD on the left, MULTIPLE_DESTINY_GRID_WORLD on the right. Arrows 
 
 In SIMPLE_GRID_WORLD case it has managed to find the optimal solution, while in MULTIPLE_DESTINY_GRID_WORLD, due to shenanigans of the heuristic, it could not. It managed, however, not to end up in the terrible terminal node.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/1_SIMPLE/Greedy-Best-First.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Greedy-Best-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./results/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/1_SIMPLE/Greedy-Best-First.png"><img src="./results/search_algorithms/1_SIMPLE/Greedy-Best-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 SIMPLE_GRID_WORLD
 
-<a href="./experimentation/search_algorithms/2_DESTINY/Grid-World.png"><img src="./experimentation/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Greedy-Best-First.png"><img src="./experimentation/search_algorithms/2_DESTINY/Greedy-Best-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/2_DESTINY/Grid-World.png"><img src="./results/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Greedy-Best-First.png"><img src="./results/search_algorithms/2_DESTINY/Greedy-Best-First.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 MULTIPLE_DESTINY_GRID_WORLD
 
 ##### Hill-Climbing Search
@@ -231,10 +231,10 @@ Similarly to Greedy-Best-First search, it is **not optimal**.
 
 In SIMPLE_GRID_WORLD case it has managed to find the optimal solution, while in MULTIPLE_DESTINY_GRID_WORLD, due to shenanigans of the heuristic, it could not. It managed, however, not to end up in the terrible terminal node.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/1_SIMPLE/Hill-Climbing.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Hill-Climbing.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./results/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/1_SIMPLE/Hill-Climbing.png"><img src="./results/search_algorithms/1_SIMPLE/Hill-Climbing.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 SIMPLE_GRID_WORLD
 
-<a href="./experimentation/search_algorithms/2_DESTINY/Grid-World.png"><img src="./experimentation/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/Hill-Climbing.png"><img src="./experimentation/search_algorithms/2_DESTINY/Hill-Climbing.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/2_DESTINY/Grid-World.png"><img src="./results/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/Hill-Climbing.png"><img src="./results/search_algorithms/2_DESTINY/Hill-Climbing.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 MULTIPLE_DESTINY_GRID_WORLD
 ##### A* Search
 
@@ -248,10 +248,10 @@ If our heuristics were consistent, we would never need to check whether some new
 
 In both SIMPLE_GRID_WORLD and MULTIPLE_DESTINY_GRID_WORLD problems A* manages to find the optimal solution.
 
-<a href="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./experimentation/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/1_SIMPLE/A*.png"><img src="./experimentation/search_algorithms/1_SIMPLE/A*.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/1_SIMPLE/Grid-World.png"><img src="./results/search_algorithms/1_SIMPLE/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/1_SIMPLE/A*.png"><img src="./results/search_algorithms/1_SIMPLE/A*.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 SIMPLE_GRID_WORLD
 
-<a href="./experimentation/search_algorithms/2_DESTINY/Grid-World.png"><img src="./experimentation/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./experimentation/search_algorithms/2_DESTINY/A*.png"><img src="./experimentation/search_algorithms/2_DESTINY/A*.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
+<a href="./results/search_algorithms/2_DESTINY/Grid-World.png"><img src="./results/search_algorithms/2_DESTINY/Grid-World.png" alt="Graph Search Algorithm" width="400" align="center"/></a> <a href="./results/search_algorithms/2_DESTINY/A*.png"><img src="./results/search_algorithms/2_DESTINY/A*.png" alt="Graph Search Algorithm" width="400" align="center"/></a>
 MULTIPLE_DESTINY_GRID_WORLD
 
 #### Final Notes
