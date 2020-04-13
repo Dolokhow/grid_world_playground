@@ -363,3 +363,11 @@ class AI(ABC):
         dictionary {(percept tuple): PerceptViz object}. Calls world.visualize_solution.
         :return: None.
         """
+
+    @abstractmethod
+    def solve(self):
+        """
+        Agent applies strategy to solve the given problem.
+        :return: Left for subclasses to define. Either some form of a solution or sets some internal variable.
+        """
+

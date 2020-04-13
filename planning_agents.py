@@ -66,7 +66,7 @@ class Iteration(AI):
     def get_debug_info(self):
         return self._world_replica
 
-    def iteration(self):
+    def _iteration(self):
 
         iter_error = self._max_error
         self._iteration_called = True
@@ -94,6 +94,9 @@ class Iteration(AI):
                 )
                 errors.append(error)
             iter_error = np.max(errors)
+
+    def solve(self):
+        self._iteration()
 
 
 class QIteration(Iteration):
@@ -314,7 +317,7 @@ class PolicyIteration(Iteration):
         )
 
     # redefined w.r.t Iteration
-    def iteration(self):
+    def _iteration(self):
         self._iteration_called = True
 
         policy_stable = False

@@ -125,7 +125,7 @@ class TreeSearch(AI, ABC):
         self._add_next_nodes()
         self._reorder_fringe()
 
-    def search(self):
+    def _search(self):
         """
         Search method general for all TreeSearch algorithms.
         :return: State / percept list, from start_state to terminal state.
@@ -146,6 +146,9 @@ class TreeSearch(AI, ABC):
                 else:
                     self._next_node = node
                     self._expand_next_states()
+
+    def solve(self):
+        self._search()
 
     def visualize(self, store_path):
         percept_viz = {}
