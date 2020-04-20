@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import os
 from core import PerceptViz, WorldVisualizer
+from matplotlib import pyplot as plt
+from matplotlib import cm
 
 
 class GridVisualizer(WorldVisualizer):
@@ -222,3 +224,148 @@ class GridVisualizer(WorldVisualizer):
                 row_concatenation = np.concatenate((row_concatenation, column_concatenation), axis=0)
 
         cv2.imwrite(os.path.join(store_path, tag + '.png'), row_concatenation)
+
+
+def draw_convergences(axes, gt, convs, conv_labels=False):
+    label = gt[0]
+    color = gt[1]
+    y = gt[2][0]
+    x = [i for i in gt[2][1]]
+    axes.plot(x, y, color=color, linewidth=1, label=label)
+
+    for conv_elem in convs:
+        label = conv_elem[0]
+        color = conv_elem[1]
+        y = conv_elem[2][0]
+        x = [i for i in conv_elem[2][1]]
+
+        if conv_labels is True:
+            axes.plot(x, y, color=color, linestyle='dashed', linewidth=1, label=label)
+        else:
+            axes.plot(x, y, color=color, linestyle='dashed', linewidth=1)
+
+
+def visualize_utilities(ground_truth_dict, utility_history_dicts, store_path, tag, set_custom_ticks=False):
+
+    # changes red channel
+    total_percepts = len(list(ground_truth_dict))
+    color_step = 1 / total_percepts
+    utility_history_agent_tags = list(utility_history_dicts)
+
+    min_tick = 100
+    max_tick = 0
+
+    if len(utility_history_agent_tags) == 1:
+        color_base = cm.get_cmap('viridis')
+        fig, ax = plt.subplots()
+
+        agent_name = utility_history_agent_tags[0]
+        utility_history = utility_history_dicts[agent_name]
+
+        percept_ind = 0
+        for percept, ground_truth in ground_truth_dict.items():
+            if percept in utility_history:
+                color = color_base(percept_ind * color_step)
+                label = '_'.join(str(i) for i in percept)
+                gt = (label, color, ground_truth)
+
+                if set_custom_ticks is True:
+                    min_gt = np.min(ground_truth[0])
+                    max_gt = np.max(ground_truth[0])
+                    if min_gt < min_tick:
+                        min_tick = min_gt
+                    if max_gt > max_tick:
+                        max_tick = max_gt
+
+                conv = utility_history[percept]
+                conv_elem = (label, color, conv)
+
+                draw_convergences(axes=ax, gt=gt, convs=[conv_elem], conv_labels=False)
+            percept_ind += 1
+
+        ax.set_title(agent_name)
+        ax.legend(loc=2, ncol=2, fontsize='xx-small')
+        if set_custom_ticks is True:
+            ax.set_yticks(np.arange(int(min_tick), int(max_tick) + 1, 1))
+        # fig.set_size_inches(8, 8)
+        fig.tight_layout()
+        fig.savefig(os.path.join(store_path, tag + '.png'), dpi=600)
+        plt.close(fig)
+
+    else:
+        # IMPLEMENT AFTER TESTING ABOVE!
+        color_base = cm.get_cmap('inferno')
+        color_step = 1/len(utility_history_agent_tags)
+        num = (np.sqrt(total_percepts))
+        rows = int(np.ceil(num))
+        cols = int(np.floor(num))
+
+        fig, axs = plt.subplots(rows, cols, figsize=(rows * 4, cols * 4))
+
+        row_ind = 0
+        col_ind = 0
+
+        for percept,  ground_truth in ground_truth_dict.items():
+            color = color_base(0)
+            gt_label = '_'.join(str(i) for i in percept)
+            gt = (gt_label, color, ground_truth)
+            convs = []
+
+            agent_index = 0
+            for agent_tag, agent_utilities in utility_history_dicts.items():
+                color = color_base(agent_index * color_step)
+                if percept in agent_utilities:
+
+                    conv = agent_utilities[percept]
+                    conv_elem = (agent_tag, color, conv)
+                    convs.append(conv_elem)
+
+                agent_index += 1
+
+            draw_convergences(axes=axs[row_ind, col_ind], gt=gt, convs=convs, conv_labels=True)
+            axs[row_ind, col_ind].set_title('Comparison ' + gt_label)
+            axs[row_ind, col_ind].legend(loc=2, ncol=2, fontsize='xx-small')
+
+            col_ind += 1
+
+            if col_ind == cols:
+                row_ind += 1
+                col_ind = 0
+
+        fig.tight_layout()
+        fig.savefig(os.path.join(store_path, tag + '.png'), dpi=600)
+        plt.close(fig)
+
+
+def visualize_returns(ground_truth, returns_dict, store_path, tag):
+    color_base = cm.get_cmap('inferno')
+    fig, ax = plt.subplots()
+
+    color = color_base(0)
+    gt_label = 'Q-Iter'
+    gt = (gt_label, color, ground_truth)
+
+    returns_agent_tags = list(returns_dict)
+    color_step = 1 / len(returns_agent_tags)
+
+    agent_index = 0
+    convs = []
+
+    for agent_tag, agent_returns in returns_dict.items():
+        color = color_base(agent_index * color_step)
+        conv = agent_returns
+        conv_elem = (agent_tag, color, conv)
+        convs.append(conv_elem)
+        agent_index += 1
+
+    draw_convergences(axes=ax, gt=gt, convs=convs, conv_labels=True)
+    ax.set_title('Returns Agent Comparison')
+    ax.legend(loc=2, ncol=2, fontsize='xx-small')
+    fig.tight_layout()
+    fig.savefig(os.path.join(store_path, tag + '.png'), dpi=600)
+    plt.close(fig)
+
+
+
+
+

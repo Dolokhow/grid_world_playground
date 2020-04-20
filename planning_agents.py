@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from core import AI, PerceptViz
+from core import MDP, PerceptViz
 
 
-class Iteration(AI):
+class Iteration(MDP, ABC):
 
     def __init__(self, world, debug='False', tag='Iteration', error=0.001, gamma=0.9):
         super().__init__(world=world, debug=debug, tag=tag)
@@ -12,7 +12,6 @@ class Iteration(AI):
         self._gamma = gamma
         all_percepts = self._world.get_available_percepts()
         self._world_replica = self._create_world_replica(all_percepts=all_percepts)
-        self._iteration_called = False
 
     @abstractmethod
     def _create_world_replica(self, all_percepts):
@@ -60,26 +59,27 @@ class Iteration(AI):
 
         return reward_estimate
 
-    def _select_next_action(self):
-        return self._actions
-
     def get_debug_info(self):
         return self._world_replica
 
+    # Iteration methods do not have alternative exit criteria
+    def _alt_exit_criteria(self):
+        return False
+
+    # Iteration methods do not have alternative exit criteria
+    def _reset_alt_exit_criteria(self):
+        pass
+
     def _iteration(self):
-
         iter_error = self._max_error
-        self._iteration_called = True
-
         while iter_error >= self._max_error:
             errors = []
             for percept, value in self._world_replica.items():
                 # we have a list of estimated_rewards for each action one reward
-                action_ids = self._select_next_action()
-                estimated_rewards = np.ones((len(action_ids)))
+                estimated_rewards = np.ones((len(self._actions)))
 
-                for action_ind in range(len(action_ids)):
-                    action_id = action_ids[action_ind]
+                for action_ind in range(len(self._actions)):
+                    action_id = self._actions[action_ind]
                     # all possible outcomes based on action_id. List of new percepts with assigned probabilities.
                     possible_actions = self._world.get_action_outcomes(percept=percept, action_id=action_id)
                     estimated_reward = self._estimate_reward(
@@ -96,6 +96,7 @@ class Iteration(AI):
             iter_error = np.max(errors)
 
     def solve(self):
+        super().solve()
         self._iteration()
 
 
@@ -107,7 +108,7 @@ class QIteration(Iteration):
     def visualize(self, store_path):
         percept_viz = {}
 
-        if self._iteration_called is False:
+        if self._solve_called is False:
             self._logger.warning('Nothing to visualize. Iteration method never called. Will visualize empty World.')
             self._world.visualize_solution(
                 percept_viz=percept_viz,
@@ -127,6 +128,9 @@ class QIteration(Iteration):
             store_path=store_path,
             tag=self._tag
         )
+
+    def _select_next_action(self, percept):
+        return self._actions[np.argmax(self._world_replica[percept])]
 
     def _create_world_replica(self, all_percepts):
         world_replica = {}
@@ -153,8 +157,8 @@ class ValueIteration(Iteration):
     def visualize(self, store_path):
         percept_viz = {}
 
-        if self._iteration_called is False:
-            self._logger.warning('Nothing to visualize. Iteration method never called. Will visualize empty World.')
+        if self._solve_called is False:
+            self._logger.warning('Nothing to visualize. Solve method never called. Will visualize empty World.')
             self._world.visualize_solution(
                 percept_viz=percept_viz,
                 store_path=store_path,
@@ -173,6 +177,23 @@ class ValueIteration(Iteration):
             store_path=store_path,
             tag=self._tag
         )
+
+    def _select_next_action(self, percept):
+        optimal_action = None
+        highest_utility = self._world_replica[percept]
+
+        for action_id in self._actions:
+            next_pos = self._world.next_position(percept=percept, action_id=action_id)
+            utility = self._world_replica[next_pos]
+
+            if utility > highest_utility:
+                highest_utility = utility
+                optimal_action = action_id
+
+        if optimal_action is not None:
+            return optimal_action
+        else:
+            return self._actions[np.random.randint(0, len(self._actions))]
 
     def _create_world_replica(self, all_percepts):
         world_replica = {}
@@ -199,6 +220,23 @@ class PolicyIteration(Iteration):
         self._policy_shift_counter = {}
         self._policy_shift_limit = policy_shift_max
         np.random.seed(123)
+
+    def _select_next_action(self, percept):
+        optimal_action = None
+        highest_utility = self._world_replica[percept]
+
+        for action_id in self._actions:
+            next_pos = self._world.next_position(percept=percept, action_id=action_id)
+            utility = self._world_replica[next_pos]
+
+            if utility > highest_utility:
+                highest_utility = utility
+                optimal_action = action_id
+
+        if optimal_action is not None:
+            return optimal_action
+        else:
+            return self._actions[np.random.randint(0, len(self._actions))]
 
     def _evaluation_step(self):
         iter_error = self._max_error
@@ -295,8 +333,8 @@ class PolicyIteration(Iteration):
     def visualize(self, store_path):
         percept_viz = {}
 
-        if self._iteration_called is False:
-            self._logger.warning('Nothing to visualize. Iteration method never called. Will visualize empty World.')
+        if self._solve_called is False:
+            self._logger.warning('Nothing to visualize. Solve method never called. Will visualize empty World.')
             self._world.visualize_solution(
                 percept_viz=percept_viz,
                 store_path=store_path,
@@ -318,8 +356,6 @@ class PolicyIteration(Iteration):
 
     # redefined w.r.t Iteration
     def _iteration(self):
-        self._iteration_called = True
-
         policy_stable = False
         while policy_stable is False:
             self._evaluation_step()

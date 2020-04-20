@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from core import AI, PerceptViz
+from core import MDP, PerceptViz
 from random import sample
 from time import time
 
 
-class LearningAgent(AI, ABC):
+class LearningAgent(MDP, ABC):
 
     def __init__(self, world, debug, gamma, max_steps, num_episodes, debug_freq):
         """
@@ -43,11 +43,20 @@ class LearningAgent(AI, ABC):
         self.running_time = 0
         self.utility_history = {}
         self.naturally_finished_episodes = []
+        self.returns = []
 
     def get_debug_info(self):
         return self._world_replica
 
+    def get_tag(self):
+        return self.get_model_name()
+
     def visualize(self, store_path):
+
+        if self._solve_called is False:
+            self._logger.warning('Nothing to visualize. Solve method never called.')
+            return
+
         percept_viz = {}
 
         for percept, internal_state in self._world_replica.items():
@@ -59,8 +68,17 @@ class LearningAgent(AI, ABC):
         self._world.visualize_solution(
             percept_viz=percept_viz,
             store_path=store_path,
-            tag=self._tag + '_' + self._arg_tag
+            tag=self.get_model_name()
         )
+
+    def _alt_exit_criteria(self):
+        if self._max_steps is not None and self._step_counter >= self._max_steps:
+            return True
+        else:
+            return False
+
+    def _reset_alt_exit_criteria(self):
+        self._step_counter = 0
 
     def _handle_state_discovery(self, percept):
         """
@@ -75,7 +93,7 @@ class LearningAgent(AI, ABC):
             updated = True
         return updated
 
-    def _update_debug_info(self, running_time):
+    def _update_debug_info(self, running_time, returns):
         """
         Updates debug info after each episode. Keeps track of utility values max_a(Q, a) for each state.
         :param running_time: Running time of the finished episode.
@@ -84,18 +102,52 @@ class LearningAgent(AI, ABC):
         if self._episode_counter % self._debug_freq == 0:
             for percept, q_values in self._world_replica.items():
                 if percept in self.utility_history:
-                    self.utility_history[percept]['values'].append(np.max(q_values).flatten())
+                    self.utility_history[percept]['values'].append(np.max(q_values).flatten()[0])
                 else:
                     self.utility_history[percept] = {
                         'first_ep': self._episode_counter,
-                        'values': [np.max(q_values).flatten()]
+                        'values': [np.max(q_values).flatten()[0]]
                     }
+            self.returns.append(returns)
 
         self.running_time += running_time
 
     def _log_info(self, time_ms, error):
         self._logger.info(' %s: EP: %d time [ms]: %f | error: %f',
                           self._tag, self._episode_counter, round(time_ms, 2), error)
+
+    def get_model_name(self):
+        return self._tag + '-' + self._arg_tag
+
+    def export_utility_history(self, state_subset=None):
+
+        if self._debug is False:
+            self._logger.warning('Utility history requested but none stored as debug flag was set to False.')
+            return
+
+        utilities = {}
+
+        for percept, value_dict in self.utility_history.items():
+            if state_subset is None or percept in state_subset:
+                utilities[percept] = [value_dict['values']]
+
+                first_occ = value_dict['first_ep']
+                num_skipped = first_occ // self._debug_freq
+                start = num_skipped * self._debug_freq
+
+                axis = range(start, self._num_episodes + self._debug_freq, self._debug_freq)
+                utilities[percept].append(axis)
+
+        return utilities
+
+    def export_returns_history(self):
+        if self._debug is False:
+            self._logger.warning('Returns history requested but none stored as debug flag was set to False.')
+            return
+
+        axis = range(self._debug_freq, self._num_episodes + self._debug_freq, self._debug_freq)
+        returns = [self.returns, axis]
+        return returns
 
     @abstractmethod
     def _generate_episode(self):
@@ -120,15 +172,9 @@ class LearningAgent(AI, ABC):
         """
         pass
 
-    # We slightly change signature from AI._select_next_action(self)!
     @abstractmethod
     def _select_next_action(self, percept):
-        """
-        See core.AI for more details. Notice that the input argument is added.
-        :param percept: Python tuple. Current percept / state.
-        :return: action_id based on current percept.
-        """
-        pass
+        self._step_counter += 1
 
 
 class MonteCarlo(LearningAgent, ABC):
@@ -176,7 +222,6 @@ class MonteCarlo(LearningAgent, ABC):
         self._action_sequence.append(cur_action)
         self._reward_sequence.append(next_reward)
         self._visited_sequence.append(next_state)
-        self._step_counter += 1
 
     def _generate_episode(self):
         """
@@ -192,24 +237,27 @@ class MonteCarlo(LearningAgent, ABC):
             next_state = self._take_action(percept=cur_percept, action_id=action_id)
             is_terminal, next_reward = self._world.get_reward(percept=next_state)
             self._update_episode(cur_action=action_id, next_state=next_state, next_reward=next_reward)
-            
-            if self._max_steps is not None and self._step_counter >= self._max_steps:
-                is_terminal = True
 
-        if self._step_counter < self._max_steps:
-            self.naturally_finished_episodes.append(self._episode_counter)
+            if is_terminal is False:
+                is_terminal = self._alt_exit_criteria()
+
+        if self._debug is True:
+            if self._max_steps is not None and self._step_counter < self._max_steps:
+                self.naturally_finished_episodes.append(self._episode_counter)
 
     def solve(self):
+        super().solve()
         while self._episode_counter < self._num_episodes:
             start_time = time() * 1000
             self._generate_episode()
+            returns = np.sum(self._reward_sequence)
             error = self._update_world_replica()
             end_time = time() * 1000
             delta = end_time - start_time
             self._log_info(time_ms=delta, error=error)
 
             if self._debug is True:
-                self._update_debug_info(running_time=delta)
+                self._update_debug_info(running_time=delta, returns=returns)
 
     @abstractmethod
     def _initialize_episode(self):
@@ -258,7 +306,7 @@ class OnMonteCarlo(MonteCarlo):
         self._arg_tag = arg_tag + '_' + self._arg_tag
 
     def _select_next_action(self, percept):
-
+        super()._select_next_action(percept=percept)
         if percept not in self._world_replica:
             rand_act_ind = np.random.randint(0, len(self._actions))
             action_id = self._actions[rand_act_ind]
@@ -392,6 +440,7 @@ class OffMonteCarlo(MonteCarlo):
         return is_terminal
 
     def _select_next_action(self, percept):
+        super()._select_next_action(percept=percept)
         rand = np.random.uniform(0, 1)
         if percept not in self._world_replica or rand < self._epsilon:
             rand_act_ind = np.random.randint(0, len(self._actions))
@@ -504,6 +553,7 @@ class TD(LearningAgent, ABC):
             self._lr = self._step * np.log(self._episode_counter + 1) / (self._episode_counter + 1)
 
     def _select_next_action(self, percept):
+        super()._select_next_action(percept=percept)
         rand = np.random.uniform(0, 1)
         if percept not in self._world_replica or rand < self._epsilon:
             rand_act_ind = np.random.randint(0, len(self._actions))
@@ -512,15 +562,16 @@ class TD(LearningAgent, ABC):
             return self._actions[np.argmax(self._world_replica[percept])]
 
     def solve(self):
+        super().solve()
         while self._episode_counter < self._num_episodes:
             start_time = time() * 1000
-            error = self._generate_episode()
+            error, returns = self._generate_episode()
             end_time = time() * 1000
             delta = end_time - start_time
             self._log_info(time_ms=delta, error=error)
 
             if self._debug is True:
-                self._update_debug_info(running_time=delta)
+                self._update_debug_info(running_time=delta, returns=returns)
 
 
 class QLearning(TD):
@@ -545,9 +596,11 @@ class QLearning(TD):
         cur_state = self._start_pos
         max_error = 0
         self._step_counter = 0
+        episode_returns = []
 
         while is_terminal is False:
             _, cur_reward = self._world.get_reward(percept=cur_state)
+            episode_returns.append(cur_reward)
             action_id = self._select_next_action(percept=cur_state)
             action_ind = self._actions.index(action_id)
 
@@ -556,6 +609,7 @@ class QLearning(TD):
 
             if is_terminal is True:
                 self._terminal_states.add(next_state)
+                episode_returns.append(next_reward)
             else:
                 _ = self._handle_state_discovery(percept=next_state)
 
@@ -570,15 +624,16 @@ class QLearning(TD):
             cur_state = next_state
             self._step_counter += 1
 
-            if self._max_steps is not None and self._step_counter >= self._max_steps:
-                is_terminal = True
+            if is_terminal is False:
+                is_terminal = self._alt_exit_criteria()
 
-        if self._max_steps is not None and self._step_counter < self._max_steps:
-            self.naturally_finished_episodes.append(self._episode_counter)
+        if self._debug is True:
+            if self._max_steps is not None and self._step_counter < self._max_steps:
+                self.naturally_finished_episodes.append(self._episode_counter)
 
         self._episode_counter += 1
         self._lr_episode_decay()
-        return max_error
+        return max_error, np.sum(episode_returns)
 
     def _q_update(self, percept, action_ind, returns):
         prev_q = self._world_replica[percept[0]][action_ind]
@@ -623,11 +678,13 @@ class SARSA(TD):
         is_terminal, cur_reward = self._world.get_reward(percept=cur_state)
         self._step_counter = 0
         max_error = 0
+        episode_returns = [cur_reward]
 
         while is_terminal is False:
 
             next_state = self._world.next_position(percept=cur_state, action_id=cur_action)
             is_terminal, next_reward = self._world.get_reward(percept=next_state)
+            episode_returns.append(next_reward)
 
             if is_terminal is False:
                 _ = self._handle_state_discovery(percept=next_state)
@@ -650,16 +707,17 @@ class SARSA(TD):
             cur_action_ind = next_action_ind
             cur_reward = next_reward
             self._step_counter += 1
-            
-            if self._max_steps is not None and self._step_counter >= self._max_steps:
-                is_terminal = True
-        
-        if self._max_steps is not None and self._step_counter < self._max_steps:
-            self.naturally_finished_episodes.append(self._episode_counter)
+
+            if is_terminal is False:
+                is_terminal = self._alt_exit_criteria()
+
+        if self._debug is True:
+            if self._max_steps is not None and self._step_counter < self._max_steps:
+                self.naturally_finished_episodes.append(self._episode_counter)
 
         self._episode_counter += 1
         self._lr_episode_decay()
-        return max_error
+        return max_error, np.sum(episode_returns)
 
     def _generate_action_probs(self, action_ind):
         action_probs = np.ones((self._num_actions, 1))

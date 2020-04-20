@@ -327,8 +327,7 @@ class AI(ABC):
 
         self._tag = tag
         self._logger = logging.getLogger(os.path.join(__name__, self._tag))
-        # Delete line below, reminder for TD Agents!
-        # self._uniform_percepts = world.get_available_percepts()
+        self._solve_called = False
 
     def _take_action(self, percept, action_id):
         """
@@ -337,6 +336,9 @@ class AI(ABC):
         """
         next_state = self._world.next_position(percept=percept, action_id=action_id)
         return next_state
+
+    def get_tag(self):
+        return self._tag
 
     @abstractmethod
     def _select_next_action(self):
@@ -370,4 +372,42 @@ class AI(ABC):
         Agent applies strategy to solve the given problem.
         :return: Left for subclasses to define. Either some form of a solution or sets some internal variable.
         """
+        self._solve_called = True
+
+
+class MDP(AI, ABC):
+
+    @abstractmethod
+    def _select_next_action(self, percept):
+        pass
+
+    @abstractmethod
+    def _alt_exit_criteria(self):
+        pass
+
+    @abstractmethod
+    def _reset_alt_exit_criteria(self):
+        pass
+
+    def play_optimally(self):
+
+        if self._solve_called is False:
+            self._logger.warning('solve method never called. Cannot act optimally.')
+            return
+
+        cur_pos = self._start_pos
+        is_terminal, reward = self._world.get_reward(percept=cur_pos)
+        returns = reward
+
+        while is_terminal is False:
+            action_id = self._select_next_action(percept=cur_pos)
+            next_pos = self._world.next_position(percept=cur_pos, action_id=action_id)
+            is_terminal, reward = self._world.get_reward(percept=next_pos)
+            returns += reward
+
+            cur_pos = next_pos
+
+            if is_terminal is False:
+                is_terminal = self._alt_exit_criteria()
+        return returns
 

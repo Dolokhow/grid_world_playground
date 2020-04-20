@@ -46,8 +46,6 @@ class TreeSearch(AI, ABC):
         self._final_path = None
         self._visitation_order = []
 
-        self._search_called = False
-
     @staticmethod
     def _solution(node):
         """
@@ -130,7 +128,6 @@ class TreeSearch(AI, ABC):
         Search method general for all TreeSearch algorithms.
         :return: State / percept list, from start_state to terminal state.
         """
-        self._search_called = True
         while True:
             if bool(self._fringe) is False:
                 return -1
@@ -148,13 +145,14 @@ class TreeSearch(AI, ABC):
                     self._expand_next_states()
 
     def solve(self):
+        super().solve()
         self._search()
 
     def visualize(self, store_path):
         percept_viz = {}
 
-        if self._search_called is False:
-            self._logger.warning('Nothing to visualize. Search method never called. Will visualize empty World.')
+        if self._solve_called is False:
+            self._logger.warning('Nothing to visualize. Solve method never called. Will visualize empty World.')
             self._world.visualize_solution(
                 percept_viz=percept_viz,
                 store_path=store_path,
